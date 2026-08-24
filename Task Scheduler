@@ -1,0 +1,19 @@
+import java.util.Arrays;
+
+class Solution {
+    public int leastInterval(char[] tasks, int n) {
+        int[] frequencies = new int[26];
+        for (char task : tasks) {
+            frequencies[task - 'A']++;
+        }
+        Arrays.sort(frequencies);
+        int maxFreq = frequencies[25];
+        int maxIdleChunks = maxFreq - 1;
+        int totalIdleSlots = maxIdleChunks * n;
+        for (int i = 24; i >= 0 && frequencies[i] > 0; i--) {
+            totalIdleSlots -= Math.min(maxIdleChunks, frequencies[i]);
+        }
+        totalIdleSlots = Math.max(0, totalIdleSlots);
+        return tasks.length + totalIdleSlots;
+    }
+}
