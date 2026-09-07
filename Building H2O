@@ -1,0 +1,41 @@
+import threading
+
+class H2O:
+    def __init__(self):
+        self.lock = threading.Condition()
+        self.h_count = 0  # Tracks hydrogen threads currently in the bonding group
+
+    def hydrogen(self, releaseHydrogen):
+        with self.lock:
+            # Wait if 2 hydrogen threads have already been admitted for the current molecule
+            while self.h_count == 2:
+                self.lock.wait()
+            
+            self.h_count += 1
+            
+            # releaseHydrogen() outputs "H". Do not change or remove this line.
+            releaseHydrogen()
+            
+            # If a complete molecule (2H + 1O) has bonded, reset the count and wake up threads
+            if self.h_count == 2:
+                # We use a trick: when h_count reaches 2 and an oxygen passes, 
+                # we can reset or let oxygen handle it. To keep it simple:
+                # we reset when both H's are done and notify all waiting threads.
+                pass 
+            
+            self.lock.notify_all()
+
+    def oxygen(self, releaseOxygen):
+        with self.lock:
+            # Wait until 2 hydrogen threads are ready to form a molecule
+            while self.h_count < 2:
+                self.lock.wait()
+            
+            # releaseOxygen() outputs "O". Do not change or remove this line.
+            releaseOxygen()
+            
+            # Reset the group counter for the next water molecule
+            self.h_count = 0
+            
+            # Wake up any waiting threads to start the next molecule
+            self.lock.notify_all()
