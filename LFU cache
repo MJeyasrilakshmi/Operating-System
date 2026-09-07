@@ -1,0 +1,58 @@
+from collections import OrderedDict
+
+class LFUCache:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.key_to_val_freq = {}       # key -> (value, frequency)
+        self.freq_to_keys = {}          # frequency -> OrderedDict(key -> True)
+        self.min_freq = 0               # Tracks global minimum frequency for eviction
+
+    def _update_frequency(self, key, value=None):
+        """Helper to increment a key's frequency tracking."""
+        val, freq = self.key_to_val_freq[key]
+        if value is not None:
+            val = value  # Update value if provided during a 'put' operation
+            
+        # Remove from old frequency group
+        del self.freq_to_keys[freq][key]
+        
+        # If old frequency group is empty and it was the min_freq, increment min_freq
+        if not self.freq_to_keys[freq] and freq == self.min_freq:
+            self.min_freq += 1
+            
+        # Insert into new frequency group
+        new_freq = freq + 1
+        if new_freq not in self.freq_to_keys:
+            self.freq_to_keys[new_freq] = OrderedDict()
+            
+        self.freq_to_keys[new_freq][key] = True
+        self.key_to_val_freq[key] = (val, new_freq)
+
+    def get(self, key):
+        if key not in self.key_to_val_freq:
+            return -1
+        
+        # Update frequency tracking and return value
+        self._update_frequency(key)
+        return self.key_to_val_freq[key][0]
+
+    def put(self, key, value):
+        if self.capacity == 0:
+            return
+            
+        if key in self.key_to_val_freq:
+            # Update existing key's value and frequency
+            self._update_frequency(key, value)
+        else:
+            # Capacity check: evict if full
+            if len(self.key_to_val_freq) >= self.capacity:
+                # The first item in the min_freq OrderedDict is the LRU item of LFU group
+                lru_key, _ = self.freq_to_keys[self.min_freq].popitem(last=False)
+                del self.key_to_val_freq[lru_key]
+                
+            # Insert the brand-new key with an initial frequency of 1
+            self.key_to_val_freq[key] = (value, 1)
+            if 1 not in self.freq_to_keys:
+                self.freq_to_keys[1] = OrderedDict()
+            self.freq_to_keys[1][key] = True
+            self.min_freq = 1  # Reset min_freq back to 1 for the new addition
