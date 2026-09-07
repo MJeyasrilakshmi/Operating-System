@@ -1,0 +1,28 @@
+import threading
+
+class DiningPhilosophers:
+    def __init__(self):
+        # Initialize 5 locks representing the 5 forks
+        self.forks = [threading.Lock() for _ in range(5)]
+
+    def wantsToEat(self, philosopher, pickLeftFork, pickRightFork, eat, putLeftFork, putRightFork):
+        # Determine fork IDs based on clockwise positioning
+        left_fork_id = philosopher
+        right_fork_id = (philosopher + 1) % 5
+        
+        # Assign primary and secondary forks based on philosopher ID parity
+        if philosopher % 2 == 0:
+            first_fork = self.forks[left_fork_id]
+            second_fork = self.forks[right_fork_id]
+        else:
+            first_fork = self.forks[right_fork_id]
+            second_fork = self.forks[left_fork_id]
+            
+        # Acquire locks sequentially, then execute actions
+        with first_fork:
+            with second_fork:
+                pickLeftFork()
+                pickRightFork()
+                eat()
+                putLeftFork()
+                putRightFork()
